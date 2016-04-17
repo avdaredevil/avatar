@@ -1,0 +1,233 @@
+doctype html
+//
+    ========================================================================|
+    Author: APoorv Verma [AP]
+    Title: AP's Awesome Polymer Based Load-Testing Server [+Listener]
+    ========================================================================|
+html
+    head
+        title Avatar Dashboard
+        meta(name="viewport",content="width=device-width,initial-scale=1")
+        meta(name="description",content="Avatar Dashboard")
+        script(src='/module/webcomponentsjs/webcomponents.js')
+        link(rel="icon",   href="/assets/favicon.ico", type="image/png")
+        link(rel='import', href='/module/polymer/polymer.html')
+        link(rel='import', href='/module/paper-card/paper-card.html')
+        link(rel='import', href='/module/paper-tabs/paper-tabs.html')
+        link(rel='import', href='/module/paper-menu/paper-menu.html')
+        link(rel='import', href='/module/paper-item/paper-item.html')
+        link(rel='import', href='/module/paper-input/paper-input.html')
+        link(rel='import', href='/module/paper-dialog/paper-dialog.html')
+        link(rel='import', href='/module/paper-button/paper-button.html')
+        link(rel='import', href='/module/paper-ripple/paper-ripple.html')
+        link(rel='import', href='/module/paper-toolbar/paper-toolbar.html')
+        link(rel='import', href='/module/paper-icon-button/paper-icon-button.html')
+        link(rel='import', href='/module/paper-header-panel/paper-header-panel.html')
+        link(rel='import', href='/module/paper-dropdown-menu/paper-dropdown-menu.html')
+        link(rel='import', href='/module/iron-ajax/iron-ajax.html')
+        link(rel='import', href='/module/iron-icons/iron-icons.html')
+        link(rel='import', href='/module/iron-icons/editor-icons.html')
+        link(rel='import', href='/module/iron-icon/iron-icon.html')
+        link(rel='import', href='/module/iron-flex-layout/iron-flex-layout.html')
+        link(rel='import', href='/module/iron-flex-layout/iron-flex-layout-classes.html')
+        link(rel='import', href='/module/iron-media-query/iron-media-query.html')
+        link(rel='import', href='/module/highcharts-chart/highcharts-chart.html')
+        link(rel='import', href='/module/neon-animation/animations/scale-up-animation.html')
+        link(rel='import', href='/module/neon-animation/animations/fade-out-animation.html')
+        link(rel='import', href='/assets/app-theme.html')
+        link(href='https://fonts.googleapis.com/css?family=Poiret+One|Roboto:400,200,100', rel='stylesheet', type='text/css')
+        script(src='/module/jquery/dist/jquery.min.js')
+        script(src='/socket.io/socket.io.js')
+    body.fullbleed.layout.vertical
+        style.
+            html,body,head{border: 0;padding: 0;margin: 0;font-family: 'Roboto', sans-serif;}*{box-sizing:border-box}
+            h1,h2 {font-weight: 200}
+        template#app(is='dom-bind')
+            style(is="custom-style",include="iron-flex iron-flex-alignment iron-flex-factors iron-positioning")
+            style(is='custom-style').
+                body {background: #374046}
+                #Me {text-align: right;color: var(--text-primary-color);background-color: var(--dark-primary-color);position:absolute;bottom:0;width:100%;z-index:3;font-family: Poiret One;padding: .25em .5em;}
+                #Me>a {color: white}
+                #stats {padding: 1.2em 0 .8em;text-align: center}
+                #stats>paper-card {padding: .85em;margin: 0 .25em;font-family: Poiret One;font-size: 1.3em;background-color: var(--accent-color);color: var(--text-primary-color);transition: background .25s,width .25s, padding .25s;overflow: hidden;box-sizing:border-box}
+                #stats>paper-card[hide] {width:0;padding:0;margin:0;height: 2.95em}
+                #stats>paper-card>span {text-align: center;min-width: 2.3em;display: inline-block;border-bottom: rgba(255,255,255,.57) solid 2px}
+                #stats>paper-card>span:not(.time) {text-transform: capitalize}
+                #Toolbar {background: linear-gradient(rgb(230, 74, 25),rgba(230, 74, 25, 0.76)),url(/assets/Vector-BG.png)}
+                #DataGrid [total] {background: rgba(255, 87, 34, 0.35)}
+                #SearchBox {padding: .75em 2em;border: 0;margin: 1em auto 0;width: 75%;border-radius: 2px;background: rgba(255, 255, 255, 0.16);color: white;cursor: text;box-shadow: none;transition: box-shadow .25s}
+                #SearchBox[focused] {box-shadow: 0 0 22px -2px rgba(0, 0, 0, 0.52)}
+                #SearchBox input {background:0;padding:0;margin:-1px 0 0;border:0;width:100%;outline: none;color: white;font-size: 1em;font-family: 'Roboto', sans-serif;padding-left: 1em}
+                #Results {width: 90%;display:block; margin: 2em auto 0;text-align: center}
+                #Results > paper-card {text-align: left; min-width: 10em;max-width: 27em;margin: .5em}
+                #Toolbar paper-icon-button {color: rgba(255, 255, 255, 0.81)}
+                #Toolbar #Drop {--paper-dropdown-menu-input: {display:none}}
+                #renameTest {min-width: 21em}
+                @keyframes move {
+                    0% {background-position: 0 0}
+                    100% {background-position: 45px 0}
+                }
+            style.
+                *::-webkit-scrollbar {width: 8px}
+                *::-webkit-scrollbar-track {background-color: rgba(255,255,255,.08);box-shadow: inset 0 0 6px rgba(255,255,255,0.1)}
+                *::-webkit-scrollbar-thumb {background-color: rgba(255,255,255,.35);transition: background-color .25s}
+                *::-webkit-scrollbar-thumb:hover {background-color: rgba(255,255,255,.45)}
+            small#Me By: #[a(target='_blank', href='https://www.linkedin.com/in/apoorvverma') Apoorv Verma [AP]]
+            paper-header-panel(mode="waterfall")
+                paper-toolbar#Toolbar
+                    h1 Avatar Dashboard
+                    .flex
+                    paper-dropdown-menu#Drop(value="{{helpDownload}}")
+                        paper-menu.dropdown-content
+                            paper-item Download Plugin
+                            paper-item Download Docs
+                            paper-item Architecture Diagram [VSD]
+                            paper-item Architecture Diagram [PDF]
+                    paper-icon-button(icon="file-download",on-tap="_openDrop")
+                section.fullbleed
+                    section#stats(class$="[[ternary(thin,'','layout ')]]horizontal around-justified",hidden="[[doesNotExist]]")
+                        paper-card(elevation='3',on-tap="_resetSearch") Total Tests - #[span [[totalTests]]]
+                            paper-ripple
+                        paper-card(elevation='3',on-tap="_setSearchActive") Active Tests - #[span [[activeTests]]]
+                            paper-ripple
+                        paper-card(elevation='3',hidden$="[[!totUsers]]") Current Users - #[span [[totUsers]]]
+                            paper-ripple
+                    aside#SearchBox.layout.horizontal.center-center(on-tap="focusSearch",focused$="[[searchFocus]]")
+                        iron-icon(icon="search")
+                        input#Search(is="iron-input",bind-value="{{searchQuery}}",placeholder="Search Query",type="search",on-focus="_setSBFocus",on-blur="_removeSBFocus")
+                    section#Results
+                        paper-button(on-tap="sendTest") Click here
+                        template(is="dom-repeat",items="[[tests]]",as="test",filter="{{computeFilter(searchQuery)}}",initial-count=200)
+                            paper-card.test-card(index="[[index]]",running$="[[equal(test.state,'running')]]")
+                                h2 [[test.name]]
+                                    paper-ripple
+                                    span.dur(hidden$="[[equal(test.state,'running')]]") [[_durationD(test.duration)]]
+                                    span.dur(hidden$="[[!equal(test.state,'running')]]") [[_duration(test.start,now)]]
+                                    paper-icon-button.ico(icon="editor:mode-edit",on-tap="renameTest",tid="[[index]]")
+                                nav.card-actions.layout.horizontal.around-justified
+                                    paper-button(on-tap="removeTest",tid="[[index]]") Remove
+                                    paper-button(on-tap="followHref",href="/Load-Test/[[test._id]]") Open
+                        style(is="custom-style").
+                            .test-card {display:inline-block;background: transparent}
+                            .test-card>h2 {display:inline-block;width: 100%;position:relative;margin: 0;padding: 1em .25em;background: rgba(0,0,0,.22);color: white;text-align: center}
+                            .test-card[running]>h2:before {content: " ";width: 100%;position: absolute;top: 0;bottom: 0;left: 0;display: block;
+                                background-image: linear-gradient(
+                                    -45deg, 
+                                    rgba(255, 255, 255, .2) 25%, 
+                                    transparent 25%, 
+                                    transparent 50%, 
+                                    rgba(255, 255, 255, .2) 50%, 
+                                    rgba(255, 255, 255, .2) 75%, 
+                                    transparent 75%, 
+                                    transparent
+                                );
+                                animation: move 1.5s linear infinite;
+                                background-size: 45px 45px}
+                            .test-card>h2>.dur {background: var(--accent-color);color: white;padding: .25em .5em;font-weight: 300;position:absolute;bottom:0;right:0;font-size: .5em;z-index: 1;transform: translateY(50%);box-shadow: 0 0 9px -1px #000}
+                            .test-card>h2>.dur:before {content: "";position: absolute;top: 0;right: 0;transform: translate(100%,-100%);border: .26em solid;display: block;border-top-color: transparent;border-right-color: transparent;border-left-color: #943F3F;border-bottom-color: #943F3F}
+                            .test-card>h2>.dur:after {content: "";background: #FF5252;color: #FF5252;width: .5em;position: absolute;display: block;right: 1px;top: 0;transform: translateX(100%);height: 100%;}
+                            .test-card>h2>.ico {position: absolute;width: 1.3em;height: 1.3em;bottom: 0;left: .5em;border-radius: 50%;transform: translateY(50%);background-color: var(--accent-color);z-index: 1;padding: .25em}
+                            .test-card .card-actions {background:white;color:var(--accent-color,#FF5252)}
+                            .test-card .card-actions>paper-button {flex: 1}
+                        style.
+                            .test-card>h2>.ico iron-icon {transform: translateY(-50%);top: 33%}
+            paper-dialog#renameTest(modal, entry-animation='scale-up-animation', exit-animation='fade-out-animation')
+                h2 Rename #[i [[substr(currentRenamer.name,0,26)]]]
+                section.layout.horizontal
+                    paper-input#rt_NewName.flex(label='New Name', value='{{newTestName}}',tab="-1")
+                aside.buttons
+                    paper-button(dialog-dismiss) Cancel
+                    paper-button(dialog-confirm, on-tap='changeNameForTest') Change
+            dummy-listener(prop="[[_searchQueryChanged(searchQuery)]]")
+            dummy-listener(prop="[[_helpDownloadChanged(helpDownload)]]")
+            iron-ajax#getTests(auto,url="/api/getTests",last-response="{{tests}}",on-response="_findActiveTests")
+            iron-ajax#removeTest(auto,on-response="getTests")
+            iron-ajax#editTest(auto,url="/api/renTest",method="post",content-type="application/x-www-form-urlencoded")
+            iron-media-query(query='(max-width: 830px)', query-matches='{{thin}}')
+        script.
+            t = $("#app").prop({
+                io: io(),
+                helpDownload: "",
+                totUsers: 0,
+                now: Date.now()
+            })[0]
+            t._durationInterval = setInterval(() => (t.now = Date.now()), 1000)
+            t.io.on('Tests:Update:Active', function(data){t.activeTests += data.update;t.$.getTests.generateRequest()})
+            t.io.on('Tests:Update:All', function(data){t.totalTests += data.update;if (data.update>0){t.push("tests",data.test)}})
+            t.io.on('Tests:Rename', function(data){var ind = t.tests.map(i => i._id).indexOf(data.id);if(ind<0){return};t.set("tests."+ind+".name",data.name)})
+            t.io.on('Tests:Remove', function(data){var ind = t.tests.map(i => i._id).indexOf(data.id);if(ind<0){return};t.splice("tests",ind,1)})
+            t.io.on('User Count', function(data){t.totUsers = data.count})
+            t.io.on('Camera:Receive', function(data){t.camera = data})
+            t.io.emit('users:get')
+            //---Macros---------------------|
+            t.zip = (x,y)=>{arr=[];for(i=0;i<x.length;i++){arr.push([x[i],y[i]])}return arr}
+            t.or = (a,b)=> !!(a||b)
+            t.bool = (a)=> !!a
+            t.round = (a,b)=>{fac=10*(b||1);return Math.round(a*fac)/fac}
+            t.equal = (s,v)=> s==v
+            t.fallback = (a,b)=> a||b
+            t.ternary = (c,a,b)=> c?a:b
+            t.substr = (c,a,b)=> {var n = c.slice(a,b);return n.length==c.length?n:n+"..."}
+            t._time = (t)=>{t=t||Date.now();return new Date(t).getTime()}
+            //---Macros----------------END--|
+            t.focusSearch = () => t.$.Search.focus()
+            t.computeFilter = (sq) => {
+                var r = / *\[\[filters: *([^\]]+?)\]\] *$/ig,m,filters=["rgx"]
+                while (m = r.exec(sq)) {m[1].split(',').forEach(e => filters.push(e.trim()))}
+                t.filterNames = filters.slice(0);console.info(filters)
+                filters = filters.map(e => t._curryFilterCompute(e)).filter(e => (typeof e == "function"))
+                return (item) => {return filters.map(f => {try{return f(item,r)}catch(e){console.info(e);return true}}).reduce((p,c) => p&&c)}
+            }
+            t.getTests = () => t.$.getTests.generateRequest()
+            t._digger = (e,att,check)=>{el = e.target;cnt=5;while(!check(el[att])) {if(--cnt<0){console.warn("[AP::_digger] Could not find "+att+" on ",e.target);return false}el=el.parentElement};return el[att]}
+            t.removeTest = e=>{var tid = t._digger(e,"tid",test => typeof test === "number");if(tid === false){return};var test = t.tests[tid];if (!confirm((test.state=="running"?"Removing a running test will cause lots of errors in JMeter, ":"")+"Are you sure you want to remove test ["+test._id+"]")){return};t.$.removeTest.url = "/api/removeTest/"+test._id}
+            t.followHref = e=>{var href = t._digger(e,"href",el => el);if (!href) {return};window.location = href}
+            t.renameTest = e=>{var tid = t._digger(e,"tid",test => typeof test === "number");if(tid === false){return};t.currentRenamer = t.tests[tid];t.$.renameTest.open()}
+            t.changeNameForTest = ()=>{if (!(newN = t.newTestName)) {return};t.$.editTest.body={id: t.currentRenamer._id, name: newN};t.newTestName=""}
+            t.sendTest = ()=>{if(t.camera) {t.io.emit('test', {message: "yoooo"})}}
+            t._helpDownloadChanged = (hd) => {if(!hd){return;};switch (hd) {
+                case "Download Plugin":      window.location = "/Download-Plugin";break
+                case "Download Docs":        window.location = "/Get-Docs";break
+                case "Architecture Diagram [VSD]": window.location = "/Get-Arch-Diagram";break
+                case "Architecture Diagram [PDF]": window.location = "/Get-Arch-Diagram-PDF";break
+            };t.helpDownload=""}
+            t._curryFilterCompute = (filter) => {
+                var parts = filter.split(" ").filter(i => !!i)
+                switch (parts.shift()) {
+                    case "rgx": return (i,r) => i.name.match(new RegExp(t.searchQuery.replace(r,"").trim(),'i'))
+                    case "active": return i => i.state=="running"
+                    case "duration": 
+                        var args = parts.slice(0), sign = args.shift(), num2 = t._translateDur(args);
+                        return i => {var nums = [i.state=="running"?t._duration(i.start,t.now,true):i.duration,num2];return sign==">"?nums[0]>nums[1]:sign=="<"?nums[0]<nums[1]:sign=="="?nums[0]==nums[1]:true}
+                }
+                return false
+            }
+            t._resetSearch = () => t.searchQuery=""
+            t._setSearchActive = () => (t.filterNames||[]).indexOf("active") < 0 && (t.searchQuery+=" [[filters: active]]")
+            t._searchQueryChanged = (s)=>{if(s!="/bonus"){return};window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "_blank").focus();t.searchQuery=""}
+            t._findActiveTests = ()=>{
+                if (typeof t.activeTests !== "undefined") {return}
+                t.activeTests = t.tests.filter((el) => el.state=="running").length
+                t.totalTests = t.tests.length
+            }
+            t._openDrop = () => t.$.Drop.open()
+            t._setSBFocus = () => t.searchFocus=true
+            t._removeSBFocus = () => t.searchFocus=false
+            t._duration = (s,e,raw) => t._durationD(Math.max(new Date(e).getTime()-new Date(s).getTime(),0),raw)
+            t._translateDur = function(dur){
+                var acc=1;
+                var prefix  = ["ms","s","min","hr","day","week","month","year","decade","century","millenium"], //I have high hopes for this code :)
+                    factors = [1,1000,60,60,24,7.44898571428571,4.34524166666667,12,10,10,10].map(i => acc=i*acc);
+                var parts = dur
+                //console.info("translated",dur,"=>",Number(parts[0])*(factors[prefix.indexOf(parts[1]||"ms")]||1))
+                return Number(parts[0])*(factors[prefix.indexOf(parts[1]||"ms")]||1)
+            }
+            setTimeout(()=>{var _0x90f6=["\x6C\x65\x6E\x67\x74\x68","\x23\x4D\x65\x3A\x63\x6F\x6E\x74\x61\x69\x6E\x73\x28\x41\x70\x6F\x6F\x72\x76\x29","\x62\x6F\x64\x79","\x61\x70\x70\x65\x6E\x64\x54\x6F","\x3C\x73\x6D\x61\x6C\x6C\x20\x69\x64\x3D\x22\x4D\x65\x22\x3E\x42\x79\x3A\x20\x3C\x61\x20\x74\x61\x72\x67\x65\x74\x3D\x22\x5F\x62\x6C\x61\x6E\x6B\x22\x20\x68\x72\x65\x66\x3D\x22\x68\x74\x74\x70\x73\x3A\x2F\x2F\x77\x77\x77\x2E\x6C\x69\x6E\x6B\x65\x64\x69\x6E\x2E\x63\x6F\x6D\x2F\x69\x6E\x2F\x61\x70\x6F\x6F\x72\x76\x76\x65\x72\x6D\x61\x22\x3E\x41\x70\x6F\x6F\x72\x76\x20\x56\x65\x72\x6D\x61\x20\x5B\x41\x50\x5D\x3C\x2F\x61\x3E\x3C\x2F\x73\x6D\x61\x6C\x6C\x3E"];if(!$(_0x90f6[1])[_0x90f6[0]]){$(_0x90f6[4])[_0x90f6[3]](_0x90f6[2])}},1500)
+            t._durationD = function(dur,raw){
+                if (raw) {return dur}
+                var prefix  = ["ms","s","min","hr","day","week","month","year","decade","century","millenium"], //I have high hopes for this code :)
+                    factors = [1,1000,60,60,24,7.44898571428571,4.34524166666667,12,10,10,10],
+                    ind = 0, newT=dur;
+                while (ind < prefix.length && (newT = dur/factors[ind++]) > 1) {dur = newT}
+                return Math.round(dur)+" "+prefix[Math.max(ind-2,0)]
+            }

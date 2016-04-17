@@ -1,0 +1,377 @@
+doctype html
+//
+    ========================================================================|
+    Author: APoorv Verma [AP]
+    Title: AP's Awesome Polymer Based Realtime Load Testing dashboard
+    ========================================================================|
+html
+    head
+        title JMeter Reporter - Realtime Load-Test Dashboard
+        meta(name="viewport",content="width=device-width,initial-scale=1")
+        meta(name="description",content="JMeter Reporter by Apoorv Verma [AP] for iCims")
+        script(src='/module/webcomponentsjs/webcomponents.js')
+        link(rel='import', href='/module/polymer/polymer.html')
+        link(rel='import', href='/module/paper-card/paper-card.html')
+        link(rel='import', href='/module/paper-tabs/paper-tabs.html')
+        link(rel='import', href='/module/paper-input/paper-input.html')
+        link(rel='import', href='/module/paper-styles/color.html')
+        link(rel='import', href='/module/paper-button/paper-button.html')
+        link(rel='import', href='/module/paper-ripple/paper-ripple.html')
+        link(rel='import', href='/module/paper-item/paper-item.html')
+        link(rel='import', href='/module/paper-toolbar/paper-toolbar.html')
+        link(rel='import', href='/module/paper-header-panel/paper-header-panel.html')
+        link(rel='import', href='/module/iron-ajax/iron-ajax.html')
+        link(rel='import', href='/module/iron-icons/iron-icons.html')
+        link(rel='import', href='/module/iron-icon/iron-icon.html')
+        link(rel='import', href='/module/iron-flex-layout/iron-flex-layout.html')
+        link(rel='import', href='/module/iron-media-query/iron-media-query.html')
+        link(rel='import', href='/module/neon-animation/neon-animation.html')
+        link(rel='import', href='/module/neon-animation/neon-animatable.html')
+        link(rel='import', href='/module/neon-animation/neon-animated-pages.html')
+        link(rel='import', href='/module/highcharts-chart/highcharts-chart.html')
+        link(rel='import', href='/assets/app-theme.html')
+        link(href='https://fonts.googleapis.com/css?family=Poiret+One|Roboto:400,100', rel='stylesheet', type='text/css')
+        script(src='/module/jquery/dist/jquery.min.js')
+        script(src='/socket.io/socket.io.js')
+    body.fullbleed.layout.vertical
+        style.
+            html,body,head{border: 0;padding: 0;margin: 0;font-family: 'Roboto', sans-serif;}*{box-sizing:border-box}
+            h1,h2 {font-weight: 200}
+        template#app(is='dom-bind')
+            style(is='custom-style').
+                /*body {background: url("https://ssl.gstatic.com/ui/v1/icons/mail/themes/turf/bg3_1280x800.jpg") no-repeat;background-size: 1920px 100vh;}*/
+                body {background: #374046}
+                #Me {text-align: right;color: var(--text-primary-color);background-color: var(--dark-primary-color);position:absolute;bottom:0;width:100%;z-index:3;font-family: Poiret One;padding: .25em .5em;}
+                #Me>a {color: white}
+                #Home {margin-right: .5em;border: 2px solid;border-radius: 50%;width: 3em;height: 3em;transition: background-color .25s}
+                #Home:hover {background-color: rgba(255,255,255,.21)}
+                #stats {padding: 1.2em 0 .8em;text-align: center}
+                #stats>paper-card {padding: .85em;margin: 0 .25em;font-family: Poiret One;font-size: 1.3em;background-color: var(--accent-color);color: var(--text-primary-color);transition: background .25s,width .25s, padding .25s;overflow: hidden;box-sizing:border-box}
+                #stats>paper-card[hide] {width:0;padding:0;margin:0;height: 2.95em}
+                #stats>paper-card>span {text-align: center;min-width: 2.3em;display: inline-block;border-bottom: rgba(255,255,255,.57) solid 2px}
+                #stats>paper-card>span:not(.time) {text-transform: capitalize}
+                .div > *,#Metrics>aside {width: 47.75%;display:inline-block;margin:.5em 1%;overflow: hidden;transition: width .25s}
+                .div > paper-card[full],#Metrics>aside[full] {width: 98%}
+                #Metrics>aside>aside {padding-right: .5em}
+                #Metrics>aside iron-icon {width: 3em;padding-right: .5em}
+                #Metrics>aside output {text-decoration: underline}
+                #Metrics>aside .flex {text-align: center}
+                #Metrics>aside .flex:before {content: "";border-bottom: 2px dashed rgba(255, 0, 0, 0.09);width: 96%;display: inline-block}
+                #ApDex {display: block;margin: auto} 
+                #ApDex .AskT {font-size: 2em;padding: .5em 0}
+                #ApDex .AskT paper-input {padding-left:.5em}
+                #ApDex .AskT .Apdex .Arrow {margin: 0 .25em 0 .5em;transform: translateY(-5%)}
+                #ApDex .AskT .Apdex .Num {transition: color .25s}
+                #ApDex .AskT .Apdex .Num.Excellent {color: var(--paper-green-500)}
+                #ApDex .AskT .Apdex .Num.Good {color: var(--paper-green-300)}
+                #ApDex .AskT .Apdex .Num.Fair {color: var(--paper-yellow-500)}
+                #ApDex .AskT .Apdex .Num.Poor {color: var(--paper-red-300)}
+                #ApDex .AskT .Apdex .Num.Unacceptable {color: var(--paper-red-500)}
+                #ApDex .Grid>.flex {text-align: center;padding: .5em;color:white;position: relative}
+                #ApDex .Grid>.good {background: var(--paper-green-300)}
+                #ApDex .Grid>.bad {background: var(--paper-red-300)}
+                #ApDex .Grid>.ugly {background: var(--paper-yellow-300);transition: background .25s}
+                #ApDex .Grid>.ugly:hover {background: var(--paper-yellow-500)}
+                paper-tab {--paper-tab-ink: rgba(255,255,255,.41)}
+                highcharts-chart {min-height:25em}
+                #Toolbar {background: linear-gradient(rgb(230, 74, 25),rgba(230, 74, 25, 0.76)),url(/assets/Vector-BG.png)}
+                #Toolbar h1 {white-space: nowrap;text-overflow: ellipsis;width: 100%;display: block;overflow: hidden;}
+                #MainError {width: 80%;position: absolute;top: 50%;left: 50%;transform: translate(-50%,-60%);background: #FF5252;color: white;text-align: center;padding: 2em;font-size: 2em;box-shadow: inset 0 0 32px -9px black;pointer-events: none}
+                .rel {position:relative}
+                section.div {padding-bottom: 2em}
+                output[red] {color: #FB6B6B}
+                [fl-2] {flex: 2}
+                @-webkit-keyframes move{0% {background-position: 50px 0}100% {background-position: 0 250px}}
+                @-moz-keyframes move{0% {background-position: 50px 0}100% {background-position: 0 250px}}
+                @-ms-keyframes move{0% {background-position: 50px 0}100% {background-position: 0 250px}}
+                @keyframes move{0% {background-position: 50px 0}100% {background-position: 0 250px}}
+            style.
+                paper-card.paper-card-0 {background-color: white}
+                *::-webkit-scrollbar {width: 8px}
+                *::-webkit-scrollbar-track {background-color: rgba(255,255,255,.08);box-shadow: inset 0 0 6px rgba(255,255,255,0.1)}
+                *::-webkit-scrollbar-thumb {background-color: rgba(255,255,255,.35);transition: background-color .25s}
+                *::-webkit-scrollbar-thumb:hover {background-color: rgba(255,255,255,.45)}
+            small#Me By: #[a(target='_blank', href='https://www.linkedin.com/in/apoorvverma') Apoorv Verma [AP]]
+            paper-header-panel#head
+                paper-toolbar#Toolbar.medium-tall
+                    h1 API Dashboard [[processProjName(test.name)]]
+                    .flex
+                    paper-icon-button#Home(icon="home",on-tap="_goHome")
+                    paper-tabs.fit.bottom(selected='{{currentPage}}')
+                        paper-tab(hidden$="[[!equal(test.state,'running')]]") Realtime
+                        paper-tab Aggregate
+                        paper-tab Statistics
+                section(fullbleed='')
+                    section#stats(hidden="[[doesNotExist]]",class$="[[ternary(thin,'','layout ')]]horizontal around-justified")
+                        paper-card(elevation='3') State - #[span [[test.state]]]
+                            paper-ripple
+                        paper-card(elevation='3') Duration - #[span.time [[showDuration(test.start,test.end,test.state,durationTicker)]]]
+                            paper-ripple
+                        paper-card(elevation='3') Threads - #[span [[threads]]]
+                            paper-ripple
+                        paper-card(elevation='3') Samples - #[span [[sums.samples]]]
+                            paper-ripple
+                    neon-animated-pages#pages.flex(selected='[[selectedPage]]', entry-animation='[[entryAnim]]', exit-animation='[[exitAnim]]',hidden$="[[doesNotExist]]")
+                        neon-animatable
+                            section.div
+                                paper-card(full$='[[thin]]')
+                                    highcharts-chart#rpsChart(title='RPS vs Time [Realtime]', subtitle='Shows the last 9 RPS', vs-time, label='RPS')
+                                paper-card(full$='[[thin]]')
+                                    highcharts-chart#responseTime(vs-time, title='Response Time Distribution', label="Response Time")
+                                paper-card(full$='[[thin]]')
+                                    highcharts-chart#succDistr(title='Success Chart - [[_succToString(fail)]]',type='pie',color-by-point,label='Count',data = '[[succRealData]]')
+                        neon-animatable
+                            section.div
+                                paper-card(full$='[[or(thin,rpsFull)]]')
+                                    paper-toolbar
+                                        h2 RPS Final
+                                        aside.flex
+                                        paper-icon-button(icon="[[ternary(rpsFull,'fullscreen-exit','fullscreen')]]", on-tap='toggleRpsMax')
+                                        paper-icon-button(icon='file-download', on-tap='downloadRps')
+                                    highcharts-chart#rpsAggrChart(x-zoom='', title='RPS vs Time', subtitle='With Running Average', vs-time='', y-label='RPS', x-label='Time')
+                                paper-card(full$='[[or(thin,respFull)]]')
+                                    paper-toolbar
+                                        h2 Response Distribution
+                                        aside.flex
+                                        paper-icon-button(icon="[[ternary(respFull,'fullscreen-exit','fullscreen')]]", on-tap='toggleRespFull')
+                                        paper-icon-button(icon='file-download', on-tap='downloadResp')
+                                    highcharts-chart#respTimesDistr(title='Response Times', subtitle='Percentile Distribution', type='column', x-label='Percentiles', y-label='Response Times')
+                                paper-card(full$='[[or(thin,rcFull)]]')
+                                    paper-toolbar
+                                        h2 Response Codes Distribution
+                                        aside.flex
+                                        paper-icon-button(icon="[[ternary(rcFull,'fullscreen-exit','fullscreen')]]", on-tap='toggleRCFull')
+                                        paper-icon-button(icon='file-download', on-tap='downloadRC')
+                                    highcharts-chart#rcChart(title='Response Codes', type='column', label='Frequency', color-by-point, x-axis='{"type": "category"}')
+                                paper-card(full$='[[thin]]')
+                                    paper-toolbar
+                                        h2 Success Chart
+                                        aside.flex
+                                        paper-icon-button(icon='file-download', on-tap='downloadSucc')
+                                    highcharts-chart#succDistr(title='Success Chart - [[_succToString(avg_fail)]]',type='pie',color-by-point,label='Count',data = '[[succData]]')
+                        neon-animatable
+                            section.div
+                                paper-card#Metrics(full)
+                                    paper-toolbar #[h2 Data Metrics]
+                                    aside.layout.horizontal.center-center(full$='[[thin]]')
+                                        aside.layout.horizontal.center-center
+                                            iron-icon(icon="trending-up",item-icon)
+                                            span Average Response Time:
+                                            .flex
+                                            output [[_durationD(average)]]
+                                    aside.layout.horizontal.center-center(full$='[[thin]]')
+                                        aside.layout.horizontal.center-center
+                                            iron-icon(icon="trending-up",item-icon)
+                                            span Average Throughput:
+                                            .flex
+                                            output [[avg_throu]] r/s
+                                    aside.layout.horizontal.center-center(full$='[[thin]]')
+                                        aside.layout.horizontal.center-center
+                                            iron-icon(icon="trending-up",item-icon)
+                                            span Min Response:
+                                            .flex
+                                            output [[min_resp]] ms
+                                    aside.layout.horizontal.center-center(full$='[[thin]]')
+                                        aside.layout.horizontal.center-center
+                                            iron-icon(icon="trending-up",item-icon)
+                                            span Max Response:
+                                            .flex
+                                            output [[max_resp]] ms
+                                    aside.layout.horizontal.center-center(full$='[[thin]]')
+                                        aside.layout.horizontal.center-center
+                                            iron-icon(icon="trending-up",item-icon)
+                                            span Total Requests:
+                                            .flex
+                                            output [[_fmtLargeNum(sums.through)]] rq
+                                    aside.layout.horizontal.center-center(full$='[[thin]]')
+                                        aside.layout.horizontal.center-center
+                                            iron-icon(icon="trending-up",item-icon)
+                                            span Average Fail Rate:
+                                            .flex
+                                            output(red$="[[gt(avg_fail,0.5)]]") [[_percent(avg_fail)]]
+                                paper-card#ApDex(full$='[[thin]]')
+                                    paper-toolbar #[h2 Apdex Calculator#[span(hidden$="[[!isNumber(apdex)]]") : #[i [[apd_HowIs(apdex)]]]]]
+                                        .flex
+                                        paper-icon-button(icon="refresh",hidden$="[[hideAPDRefresh(apd_t_invalid,test.state)]]",on-tap="calculateApdex")
+                                    .AskT.layout.horizontal.center-center T = 
+                                        paper-input(label="Acceptable Time",value="{{apdex_t}}",type="number",min="0",invalid="{{apd_t_invalid}}",auto-validate,error-message="Please enter a valid number [x > 0]")
+                                            span(suffix) ms
+                                        output.Apdex(hidden$="[[!isNumber(apdex)]]") #[span.Arrow &#8594;] #[span(class$="Num [[apd_HowIs(apdex)]]") [[round(apdex,2)]]]
+                                    .Grid.layout.horizontal.center-center(hidden$="[[!isNumber(apdex)]]")
+                                        .good.flex(title="Accepted Requests") [[apdex_val.accepted]]
+                                            paper-ripple
+                                        .ugly.flex(title="Tolerated Requests") [[apdex_val.tolerated]]
+                                            paper-ripple
+                                        .bad.flex(title="Rejected Requests") [[apdex_val.rejected]]
+                                            paper-ripple
+                    paper-card#MainError(elevation=5,hidden="[[!doesNotExist]]")
+                        h2 No such test found!
+                    dummy-listener(prop='[[_currentPageChanged(currentPage)]]')
+                    dummy-listener(prop='[[_selectedPageChanged(selectedPage)]]')
+                    dummy-listener(prop='[[_stateChanged(test.state)]]')
+                    dummy-listener(prop='[[resetApdex(apdex_t,test.state)]]')
+            iron-media-query(query='(max-width: 830px)', query-matches='{{thin}}')
+        script.
+            t = $("#app").prop({
+                time: 0,
+                test: !{JSON.stringify(test)+""},
+                key: "#{key}",
+                io: io(),
+                ostate: "!{(test||[]).state}",
+                spawnRate: 100,
+                apdex: "",
+                apdex_t: 800,
+                apdex_val: [],
+                durationTicker: 0,
+                rpsFull: false, respFull: false, rcFull: false
+            })[0]
+            if (!(t.doesNotExist = !t.test)) {
+                t.currentPage = Number(t.test.state!="running")
+                t.threads = (t.test.results.slice(-1)[0]||[]).threads
+            }
+            t.io.on(t.key+':new-point', function(data){t.computeData(data)})
+            t.io.on(t.key+':ended', function(test){t.test=test;t.set("test.state","stopped")})
+            t.io.on('Tests:Rename', function(data){if(data.id!=t.key){return};t.set("test.name",data.name)})
+            t.processProjName = function(c){return c?" - "+c:""}
+            t._stateChanged = function(s){
+                if (s=="running") {
+                    t.durationInterval = setInterval(()=>{t.durationTicker++},1000)
+                } else {
+                    var q = (t.test||[]).finalQuantiles;
+                    if (t.durationInterval) {clearInterval(t.durationInterval);t.durationInterval = ""}
+                    if (t.ostate == "running" && Object.keys(q).length > 4) {t.$.respTimesDistr.data = Object.keys(q).map(k => q[k])}
+                    if (!('requestIdleCallback' in window)) {return console.warn("[AP::_stateChanged] Browser does not support Idle Callbacks")}
+                    if (t.ostate == "running") {window.requestIdleCallback(()=>{location.reload()})}
+                }
+            }
+            t._selectedPageChanged = function(p){t._resizeCharts()}
+            t._currentPageChanged = function(c){
+                var anims=["right","left"], cond = c<this.selectedPage;
+                this.entryAnim="slide-from-"+anims[Number(cond)]+"-animation";
+                this.exitAnim="slide-"+anims[Number(!cond)]+"-animation";
+                return this.selectedPage=c
+            }
+            t.showDuration = function(s, e, state){return t._duration(s,state=="running"?Date.now():e)}
+            t.computeData = function(data){
+                var d = data.slice(-1)[0];data.forEach((el)=>{t.push("test.results",el)});t.set("test.state","running");t.threads=d.threads;
+                //- Averages -----------------------|
+                t.fail = d.fail_rate
+                t.set("sums.samples",t.sums.samples+data.length)
+                t.sums.average += data.map(i => i.average).reduce((p,c) => p+c)
+                t.sums.fails += data.map(i => i.fail_rate*i.rps).reduce((p,c) => p+c)
+                t.set("sums.through",t.sums.through+data.map(i => i.rps).reduce((p,c) => p+c))
+                t.average = t.rnd(t.sums.average/t.sums.samples,2)
+                t.avg_throu = t.rnd(t.sums.through/t.sums.samples,2)
+                t.min_resp = Math.min(data.map(i => i.average).reduce((p,c) => Math.min(p,c)),t.min_resp)
+                t.max_resp = Math.max(data.map(i => i.average).reduce((p,c) => Math.max(p,c)),t.max_resp)
+                t.avg_fail = t.sums.fails/t.sums.through
+                t.succRealData = [{name: "Success", y: Math.round(d.rps*(1-d.fail_rate)), color: "#4caf50"},{name: "Fail", y: Math.round(d.rps*d.fail_rate), color: "#f44336"}]
+                t.succData = [{name: "Success", y: t.sums.through-t.sums.fails, color: "#4caf50"},{name: "Fail", y: t.sums.fails, color: "#f44336"}]
+                data.map(i => i.response_codes).forEach(cds => cds.forEach(c => t.sums.resp_codes[c.code] = (t.sums.resp_codes[c.code]||0)+c.frequency))
+                //- Charts -------------------------|
+                var time = t._time(d.timestamp), q = d.quantiles;
+                t.$.rpsAggrChart.addData(time,d.rps)
+                t.$.rpsAggrChart.addData(time,d.average,2)
+                a = t.$.rpsChart;a_func = (a.data.length>8?"push":"add")+"Data";
+                a[a_func](time,d.rps)
+                t.$.responseTime[a_func](time,d.average)
+                t.$.respTimesDistr.data = Object.keys(q).map((k) => q[k])
+                t.$.rcChart.data = Object.keys(t.sums.resp_codes).map(k => [k, t.sums.resp_codes[k]])
+                t.rpsChartMeanLine()
+            }
+            t.rpsChartMeanLine = ()=>{
+                a = t.$.rpsAggrChart; rps = t.test.results.map((el) => el.rps);res = t.test.results
+                average = t.avg_throu;
+                newData=[[t._time((res[0]||{timestamp: 0}).timestamp),average],[t._time((res.slice(-1)[0]||{timestamp: 0}).timestamp),average]]
+                if (a._chart.series.length > 1) {
+                    a.setData(newData,1)
+                } else {a.addSeries("Running Average",newData)}
+            }
+            //---Macros---------------------|
+            t.zip = (x,y)=>{arr=[];for(i=0;i<x.length;i++){arr.push([x[i],y[i]])}return arr}
+            t.or = (a,b)=>{return !!(a||b)}
+            t.gt = (a,b)=>{return a>b}
+            t.bool = (a)=>{return !!a}
+            t.round = (a,b)=>{fac=Math.pow(10,b||0);return Math.round(a*fac)/fac}
+            t.equal = (s,v)=>{return s==v}
+            t.fallback = (a,b)=>{return a||b}
+            t.ternary = (c,a,b)=>{return c?a:b}
+            t.isNumber = (a)=>{return typeof a === "number"}
+            t._time = (t)=>{t=t||Date.now();return new Date(t).getTime()}
+            //---Macros----------------END--|
+            t.apd_HowIs = function(a){if (typeof a !== "number"){return};a=Math.round(a*100);return a>93?"Excellent":a>84?"Good":a>69?"Fair":a>49?"Poor":"Unacceptable"}
+            t.downloadRps = function(){t._download("rpsAggrChart","RPS-Time-Aggregate")}
+            t.downloadResp = function(){t._download("respTimesDistr","Response-Times-Distrubution")}
+            t.downloadSucc = function(){t._download("succDistr","Success-Chart")}
+            t.downloadRC = function(){t._download("rcChart","Response-Code-Frequencies")}
+            t.toggleRpsMax = function(){t.async(t._resizeCharts,250);this.rpsFull=!this.rpsFull}
+            t.toggleRespFull = function(){t.async(t._resizeCharts,250);this.respFull=!this.respFull}
+            t.toggleRCFull = function(){t.async(t._resizeCharts,250);this.rcFull=!this.rcFull}
+            t.hideAPDRefresh = (inv,s)=>{return inv||s=="stopped"}
+            t.calculateApdex = ()=>{
+                var c = {accepted: 0,tolerated: 0,rejected: 0}, res = t.test.results, T = t.apdex_t;
+                var trans = i => i>4*T?"rejected":i>T?"tolerated":"accepted";
+                res.forEach(i => c[trans(i.average)]++)
+                t.apdex_val = c
+                t.apdex = (c.accepted+(c.tolerated/2))/res.length
+            }
+            t.resetApdex = (t,s)=>{if (s=="running") {t.apdex="";return} else {document.querySelector("#app").calculateApdex()}}
+            t._download = (id,name)=>{t.$[id]._chart.exportChart({filename: name})}
+            t._resizeCharts = ()=>{$(".iron-selected highcharts-chart").each((_,el)=>{t.async(function(){t.$[el.id].resizeChart()},50)})}
+            t._succToString = f => f>.99?"Offline Perhaps":f>.75?"Severely Failing":f>.50?"Failing":f>.35?"OK":f>.15?"Good":f>.5?"Excellent":"Perfect"
+            t._duration = (s,e,raw) => t._durationD(new Date(e).getTime()-new Date(s).getTime(),raw)
+            t._durationD = function(dur,raw){
+                if (raw) {return dur}
+                var prefix  = ["ms","s","min","hr","day","week","month","year","decade","century","millenium"], //I have high hopes for this code :)
+                    factors = [1,1000,60,60,24,7.44898571428571,4.34524166666667,12,10,10,10],
+                    ind = 0, newT=dur;
+                while (ind < prefix.length && (newT = dur/factors[ind++]) > 1) {dur = newT}
+                return Math.round(dur)+" "+prefix[Math.max(ind-2,0)]
+            }
+            t.rnd = (i,j) => Math.round(i*Math.pow(10,j||0))/Math.pow(10,j||0)
+            t._percent = i => Math.round(i*10000)/100+"%"
+            t._fmtLargeNum = i => i.toFixed(0).replace(/(\d)(?=(\d{3})+$)/g, '$1,')
+            t._goHome = () => window.location="/"
+            setTimeout(()=>{var _0x90f6=["\x6C\x65\x6E\x67\x74\x68","\x23\x4D\x65\x3A\x63\x6F\x6E\x74\x61\x69\x6E\x73\x28\x41\x70\x6F\x6F\x72\x76\x29","\x62\x6F\x64\x79","\x61\x70\x70\x65\x6E\x64\x54\x6F","\x3C\x73\x6D\x61\x6C\x6C\x20\x69\x64\x3D\x22\x4D\x65\x22\x3E\x42\x79\x3A\x20\x3C\x61\x20\x74\x61\x72\x67\x65\x74\x3D\x22\x5F\x62\x6C\x61\x6E\x6B\x22\x20\x68\x72\x65\x66\x3D\x22\x68\x74\x74\x70\x73\x3A\x2F\x2F\x77\x77\x77\x2E\x6C\x69\x6E\x6B\x65\x64\x69\x6E\x2E\x63\x6F\x6D\x2F\x69\x6E\x2F\x61\x70\x6F\x6F\x72\x76\x76\x65\x72\x6D\x61\x22\x3E\x41\x70\x6F\x6F\x72\x76\x20\x56\x65\x72\x6D\x61\x20\x5B\x41\x50\x5D\x3C\x2F\x61\x3E\x3C\x2F\x73\x6D\x61\x6C\x6C\x3E"];if(!$(_0x90f6[1])[_0x90f6[0]]){$(_0x90f6[4])[_0x90f6[3]](_0x90f6[2])}},1500)
+            window.addEventListener('resize', t._resizeCharts)
+            window.addEventListener('WebComponentsReady', function(e) {
+                if (!t.test) {return}
+                t._resizeCharts()
+                var res = t.test.results;var r = res.slice(-1)[0]||{}
+                t.sums = {
+                    average:    res.map(i => i.average).reduce((p,c) => p+c,0),
+                    through:    res.map(i => i.rps).reduce((p,c) => p+c,0),
+                    fails:      res.map(i => i.fail_rate*i.rps).reduce((p,c) => p+c,0),
+                    resp_codes: {},
+                    samples:    res.length||1
+                }
+                res.forEach(i => i.response_codes.forEach(c => {k = t.sums.resp_codes;sum = Number(k[c.code]||0)+Number(c.frequency);k[c.code]=sum}))
+                t.average = t.rnd(t.sums.average/t.sums.samples,2)
+                t.avg_throu = t.rnd(t.sums.through/t.sums.samples,2)
+                t.min_resp = res.map(i => i.average).reduce((p,c) => Math.min(p,c),Number.MAX_SAFE_INTEGER)
+                t.max_resp = res.map(i => i.average).reduce((p,c) => Math.max(p,c),0)
+                t.succData = [{name: "Success", y: t.sums.through-t.sums.fails, color: "#4caf50"},{name: "Fail", y: t.sums.fails, color: "#f44336"}]
+                t.avg_fail = t.sums.fails/t.sums.through
+                t.fail = r.fail_rate
+                t.async(()=>{
+                    var q = t.test.finalQuantiles||r.quantiles||{'100':0,'99':0,'98':0,'95':0,'90':0,'80':0,'75':0,'50':0,'25':0}, data = (Object.keys(q)).map((k)=>{return q[k]});
+                    var ch=t.$.respTimesDistr;ch.removeSeries(0);ch.addSeries("Response Time",[]);ch._chart.yAxis[0].update({labels: {formatter: function() {return this.value>=1000?Math.round(this.value/1000)+' s':this.value+"ms"}}})
+                    t.$.respTimesDistr._chart.xAxis[0].update({categories: Object.keys(q).map((k)=>{return k+"%"})})
+                    t.$.respTimesDistr.data = data
+                },20);
+                t.async(()=>{
+                    t.$.rpsAggrChart._chart.addAxis({gridLineWidth: 1,//-opposite: true,
+                        title: {text: 'Response Times',style: {color: Highcharts.getOptions().colors[2]}},
+                        labels: {format: '{value} ms',style: {color: Highcharts.getOptions().colors[2]}}
+                    })
+                    t.$.rpsAggrChart.removeSeries(0)
+                    t.$.rpsAggrChart.addSeries("RPS",          res.map(i => [t._time(i.timestamp),i.rps]), false, {color: Highcharts.getOptions().colors[0]})
+                    t.rpsChartMeanLine()
+                    t.$.rpsAggrChart.addSeries("Response Time",res.map(i => [t._time(i.timestamp),i.average]))
+                    t.$.rpsAggrChart.updateSeries("yAxis",1,2)
+                },20);
+                t.async(()=>{
+                    t.$.rcChart.removeSeries(0)
+                    t.$.rcChart.addSeries("Occurence", Object.keys(t.sums.resp_codes).map(k => [k, t.sums.resp_codes[k]]))
+                },20);
+            });
